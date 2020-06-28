@@ -13,7 +13,7 @@ jobs:
           name: Check Contributor Agreement
           command: |
             CONTRIBUTOR=${CIRCLE_USERNAME:-CIRCLE_PR_USERNAME}
-            grep -r "^${CONTRIBUTOR}" CONTRIBUTORS.md
+            grep -r "^${CONTRIBUTOR}$" CONTRIBUTORS.md
 
 workflows:
   version: 2
