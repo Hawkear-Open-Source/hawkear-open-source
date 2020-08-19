@@ -22,6 +22,8 @@ rem   hoscall transcribe fnAudio fnTrain fnTranscription -fl:500
 
 if NOT "%*" == "" (
     setlocal
+) else (
+	echo Setting up window for calling HawkEar Open Source APIs
 )
 cd %~dp0
 

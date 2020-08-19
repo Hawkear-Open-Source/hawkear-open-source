@@ -1,4 +1,4 @@
-function [isOK] = dowritelowndes (xxRawPieceByBi, fqfnLowndes, tdata, kpstruct)
+function [isOK] = dowritelowndes (fqfnAudioIn, xxRawPieceByBi, fqfnLowndes, tdata, kpstruct)
     % Creates the lowndes version of the transcription
 	
 	% 1. Open output file
@@ -16,7 +16,7 @@ function [isOK] = dowritelowndes (xxRawPieceByBi, fqfnLowndes, tdata, kpstruct)
 	
 	% 3. Write Structured Comments based on tdata
 	fprintf(fid,'#. Lowndes: Version 2\n');
-	fprintf(fid,'#. SourceFilename: %s\n',			tdata.fqfnTouch);
+	fprintf(fid,'#. SourceFilename: %s\n',			fqfnAudioIn);
 	fprintf(fid,'#. Tower: %s\n',				  	tdata.TowerPhrase);
 	fprintf(fid,'#. RingingName: %s\n',				tdata.Ringingname);
 	fprintf(fid,'#. RingingDateTime: %s\n',	  		tdata.Ringingdatetime);
@@ -40,10 +40,10 @@ function [isOK] = dowritelowndes (xxRawPieceByBi, fqfnLowndes, tdata, kpstruct)
 	fprintf(fid,'#. TraindB: %s\n',                 sprintf('%d, ',tdata.TraindB)(1:end-2));
 	fprintf(fid,'#. TrainedOn: %s\n',               tdata.TrainedOn);
 	fprintf(fid,'#. TrainDataRecordedOn: %s\n',     tdata.TrainDataRecordedOn);
-	fprintf(fid,'#. TrainParams: %s\n',				kpstruct.trainparams);
-	fprintf(fid,'#. GainParams: %s\n', 				kpstruct.gainparams);
-	fprintf(fid,'#. OnsetParams: %s\n',				kpstruct.onsetparams);
-	fprintf(fid,'#. WriteParams: %s\n',				kpstruct.writeparams);
+	fprintf(fid,'#. TrainParams: %s\n',				tdata.trainparams);
+	fprintf(fid,'#. GainParams: %s\n', 				tdata.gainparams);
+	fprintf(fid,'#. OnsetParams: %s\n',				tdata.onsetparams);
+	fprintf(fid,'#. WriteParams: %s\n',				tdata.writeparams);
 
 	% 4. Write Strike Data
 	if kpstruct.hb == 'y'    % option to suppress indication of Hand vs Back in the lowndes file which is sometimes useful

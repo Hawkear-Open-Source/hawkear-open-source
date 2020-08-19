@@ -1,4 +1,4 @@
-function [isOK] = dotrain(fqdnTrainIn, fqfnTrainOut, kpstruct)
+function [isOK] = dotrain(fqdnTrainIn, fqfnTrainOut, towerid, towerphrase, kpstruct)
     display 'in dotrain'
 	addpath ('transcribe/train')
 	addpath ('transcribe/misc')
@@ -7,11 +7,11 @@ function [isOK] = dotrain(fqdnTrainIn, fqfnTrainOut, kpstruct)
     setenv('OPENBLAS_NUM_THREADS','1'); 
 	tempdir = getenv('TEMP');
 	
-	% 1. Work out number of bells from directory contents
+	% 1. Work out number of bells in tower from directory contents
     bellfns = simpleglob([fqdnTrainIn, filesep,'*t.wav']);
-   	nBells=length(bellfns);
-	if nBells > 0
-		fprintf('       Assuming %d bells\n',nBells)
+   	nBellsInTower = length(bellfns);
+	if nBellsInTower > 0
+		fprintf('       Assuming %d bells\n',nBellsInTower)
 	else
 		fprintf('   !!! No Training data for Tower\n\n')
 		isOK=0;
@@ -19,12 +19,12 @@ function [isOK] = dotrain(fqdnTrainIn, fqfnTrainOut, kpstruct)
     end
 	
     % 2. Compute number of processes to use
-	TotalProcesses = max(nBells, kpstruct.TotalProcesses);
+	TotalProcesses = min(nBellsInTower, kpstruct.TotalProcesses);
     fprintf('       Using %d processes\n',TotalProcesses);
    
     % 3. Allocate bells to processors
-    BaseNoBells = floor(nBells/TotalProcesses);  
-    ExtraBells = (nBells - TotalProcesses*BaseNoBells); %will be the number of processes doing one more.
+    BaseNoBells = floor(nBellsInTower/TotalProcesses);  
+    ExtraBells = (nBellsInTower - TotalProcesses*BaseNoBells); %will be the number of processes doing one more.
     if BaseNoBells == 0
        TotalProcesses = ExtraBells;
        p = ones(1,ExtraBells);
@@ -71,14 +71,21 @@ function [isOK] = dotrain(fqdnTrainIn, fqfnTrainOut, kpstruct)
 		allbasis(:,BellsToDo) = somebasis;
 		tdata.TraindB(BellsToDo) = tpdata.TraindB(BellsToDo);
     end
-    tdata.TraindB = round(tdata.TraindB*100)/100;
-	tdata.TrainedOn    = epoch2hkdatetime(gettime());
+	
+	% 6. Complete tdata with all the fields transcribe is expecting
 	for i = 1:length(bellfns)
         f=dir(bellfns{i});
         timestamp(i) = f.statinfo.mtime;
 	end
 	tdata.TrainDataRecordedOn = strftime('%Y%m%d-%H%M',localtime(min(timestamp)));
-    tdata.BellsAvailable = sum(allbasis)~=0; 
+    tdata.TraindB             = round(tdata.TraindB*100)/100;
+	tdata.TrainedOn           = epoch2hkdatetime(gettime());
+    tdata.BellsAvailable      = sum(allbasis)~=0; % boolean vector
+	%tdata.nBellsInTower       = min(12, length(tdata.BellsAvailable)); % used to ensure extra bells are not counted for diatonic sets
+	tdata.WinSizeSecs         = kpstruct.WinSizeSecs;
+	tdata.HopSizeSecs         = kpstruct.HopSizeSecs;
+	tdata.tower               = towerid;
+	tdata.towerphrase         = towerphrase;
 	
     % 6. Normalize spectra
     allbasis=allbasis./repmat(sum(allbasis,1),size(allbasis,1),1); % This line was inherited from the finnish group but may
@@ -99,7 +106,7 @@ function [isOK] = dotrain(fqdnTrainIn, fqfnTrainOut, kpstruct)
     ccurve = (1./bfc).^kpstruct.compression;       % Invert bfc and apply compression to give vector to multiply
                                                    % train data and mixture data by prior to classification
     allbasis=scramble(allbasis,'y',ccurve(1));     % Scramble code that should be removed
-
+	
     % 8. Save data needed by next phase
 	tdata.TrainProcTime = sprintf('%.3fsecs',gettime()-prevtime);
     save ('-mat', fqfnTrainOut, 'allbasis', 'tdata', 'ccurve');

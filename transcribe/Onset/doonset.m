@@ -25,7 +25,7 @@ function [isOK, xxRawPieceByBi, tdata] = doonset(mixtureA, tdata, kpstruct)
 	% The /50 here arises from the fact that butter expects the cutoff frequency
 	% to be twice (why?) the frequency expressed in cycles per sample.
 	% The samples are every hopsize. So with a hopsize of 10ms the
-	crh = GetChangeRateHz(mixtureA,kpstruct.HopSizeSecs)*2*kpstruct.HopSizeSecs;
+	crh = GetChangeRateHz(mixtureA,tdata.HopSizeSecs)*2*tdata.HopSizeSecs;
 	[b, a] = butter(4,crh*1.1);
 	mixtureE=filtfilt(b, a, mixtureD);
 	clear MixtureD;
@@ -130,7 +130,7 @@ function [isOK, xxRawPieceByBi, tdata] = doonset(mixtureA, tdata, kpstruct)
 	if verbose;fprintf(  '       Total Onsets estimated: %d (%.2f%%)\n\n', sum(totcounts(6:end)), 100*sum(totcounts(6:end))/sum(totcounts));end;
 
 	% output the onsets to the 'xxRawPieceByBi' array
-	hopsize=kpstruct.HopSizeSecs*1000;
+	hopsize=tdata.HopSizeSecs*1000;
 	a = find(allzs');
 	t = floor((a-1)/size(allzs,2));
 	b = a-t*size(allzs,2);

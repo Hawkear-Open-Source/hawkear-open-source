@@ -1,5 +1,5 @@
 fqdntest = fullfile(getenv('APPDATA'), 'HOS','testdata');
 train(fullfile(fqdntest, 'thunston.trainingdata'),...
       fullfile(fqdntest, 'Thunston.train.bin'),...
-	  '');
+	  'Thunston', 'Thunston St Somewhere');
 disp trained
