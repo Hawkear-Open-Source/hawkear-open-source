@@ -12,13 +12,15 @@ function [varargout] = train(varargin)
 	% 2. Keyword parameters accepted by the train command. The parameters supplied
 	%    are validated default values supplied, and a cell structure containing a complete
 	%    decoded set of keyword parameters is created for passing to dotrain.m
-    %        kw     type   field name           def value  meaning
-    keywords.ws  = {'num', 'WinSizeSecs',       0.05};    %    
-    keywords.hs  = {'num', 'HopSizeSecs',       0.01};    %    
-    keywords.co  = {'num', 'compression',       0.9};     %    
-    keywords.sw  = {'num', 'swin',              40};      %    
-    keywords.ts  = {'str', 'trainsuffix',       ''};      %    
-    keywords.tp  = {'num', 'TotalProcesses',    nproc()}; %  for matlab use feature('numcores')    
+    % Keyword       Type   kpstruct.Fieldname  Default   Groupname       Meaning
+    %keywords.qta= {'yn', 'rubbish',               'q',    ''};        % causes error in keyword table because 'q' should be 0 or 1
+    keywords.qt  = {'num', 'quiet',              2,      ''};          % 2. Very little output. 1. Ringing relevant. 1 Lots
+    keywords.ws  = {'num', 'WinSizeSecs',        0.05    'train'};     %    
+    keywords.hs  = {'num', 'HopSizeSecs',        0.01    'train'};     %    
+    keywords.co  = {'num', 'compression',        0.9     'train'};     %    
+    keywords.sw  = {'num', 'swin',               40      'train'};     %    
+    keywords.ts  = {'str', 'trainsuffix',        ''      'train'};     %    
+    keywords.tp  = {'num', 'TotalProcesses',     nproc() 'train'};     %  for matlab use feature('numcores')    
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	
 	%%%%%%%%%%%%%%%Do not change this section%%%%%%%%%%%%%%%%%%%%%%%%%%%%

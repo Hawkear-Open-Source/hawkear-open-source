@@ -5,19 +5,18 @@ function isOK = testparsep()
     % returned by parsep and more than this number will produce an error. If fewer
     % positional parameters are are supplied the later parameters will be set to []
     pplen=2;
-    % Define valid keywords. Fieldnames of the keywords structure are valid parameters
-    % on commandline
-    keywords.qt={'num', 'na', 2     };
-    keywords.fl={'num', 'nb', 300   };
-	keywords.xx={'str', 'sa', 'AAAA'};
-	keywords.yy={'str', 'sb', 'BBBB'};
-	keywords.by={'yn',  'by', 1     };
-	keywords.bn={'yn',  'bn', 0     };
-	keywords.bd={'yn',  'bd', 0     };
+    % Define valid keywords.
+	%      param   type   kpstruct    def value groupname
+    keywords.qt = {'num', 'quiet'    , 2      , ''};
+	keywords.ts = {'str', 'suffix'   , 'TSTS' , 'train'};
+	keywords.hs = {'yn',  'hopsize'  , 0      , 'train'};
+    keywords.fl = {'num', 'freqlow'  , 300    , 'onset'};
+	keywords.oa = {'str', 'algorithm', 'slope', 'onset'};
+	keywords.by = {'yn',  'hb'       , 1      , 'onset'};
 
 	% Test 1. Test correct call all supported types with defaults being set, case
     % insensitive keyword compare
-	[isOK, pp,kp, msg] = parsep(pplen,keywords, {'fn1', '-qt:0', '-Fl:850.1', '-by:n', '-bn:y'});
+	[isOK, pp,kp, msg] = parsep(pplen,keywords, {'fn1', '-qt:0', '-oa:n', '-ts:asd'})
 	dpp=(disp(pp)(disp(pp)~="\n"));
 	dkp=(disp(kp)(disp(kp)~="\n"));
 	testOK(1,1) = (isOK==1);
@@ -27,7 +26,7 @@ function isOK = testparsep()
     %Test1OK = disp(testOK(1,:))
 
     % Test 2. Unwanted positional parameters, no keyword parameters
-	[isOK, pp,kp,msg] = parsep(pplen,keywords, {'fn1','fn2','fn3'});
+	[isOK, pp,kp,msg] = parsep(pplen,keywords, {'fn1','fn2','fn3'})
 	dpp=(disp(pp)(disp(pp)~="\n"));
 	dkp=(disp(kp)(disp(kp)~="\n"));
 	testOK(2,1) = (isOK==0);
@@ -37,7 +36,7 @@ function isOK = testparsep()
     %Test2OK = disp(testOK(2,:))
 	
     % Test 3. Invalid keyword parameter name
-	[isOK, pp,kp] = parsep(pplen,keywords, {'fn1','fn2', '-qq:1'});
+	[isOK, pp,kp] = parsep(pplen,keywords, {'fn1','fn2', '-qq:1'})
 	dpp=(disp(pp)(disp(pp)~="\n"));
 	dkp=(disp(kp)(disp(kp)~="\n"));
 	testOK(3,1) = (isOK==0);
@@ -54,3 +53,4 @@ function isOK = testparsep()
     end
 end	
 	%['|', '{  [1,1] = fn1  [1,2] = [](0x0)}','|']
+	

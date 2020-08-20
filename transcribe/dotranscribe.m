@@ -7,14 +7,31 @@ function [rc] = dotranscribe(fqfnAudioIn, fqfnTrainIn, fqfnLowndesOut, kpstruct)
 	addpath ('transcribe/train')
 	
 	% 1. dovalidate
-	[isOK, tdata] = dovalidate(fqfnAudioIn, fqfnTrainIn, kpstruct);
-	if ~isOK
-		rc = 2021; % Indicate validation problem
-		return
-	end
+	%[isOK, tdata] = dovalidate(fqfnAudioIn, fqfnTrainIn, kpstruct);
+	%if ~isOK
+	%	rc = 2021; % Indicate validation problem
+	%	return
+	%end
+    
+    % 1. Init tdata
+	tdata.transcribedby = 'hawkear-open-source';
+	tdata.transcribedfor = 'HOS Development';
 	
-	% 2. Classify
-	tdata.quiet = kpstruct.quiet;
+	% 2. Classify (these assignments to tdata are a bodge that doclassify should be fixed to avoid the need for)
+	tdata.Ringingdatetime = '20200101-0000';                    
+	tdata.Ringingname     = 'Touch 1';
+	tdata.bellset         = 's8t8'; 
+	tdata.Ringers         = 'ian,martin,paul,Leigh';
+    tdata.BellsAvailable  = ones(1,8);  
+    tdata.HopSizeSecs     =  .01;     
+    tdata.WinSizeSecs     =  .05;     
+    tdata.tower           =  'asd';
+    tdata.TowerPhrase     =  'asd st qwe';
+	tdata.trainparams     = '';
+	tdata.Rungon          = ''; % The friendly name of the bellset
+	tdata.Tenor           = 8;  % Why is this here! Can't remember
+	tdata.BellsRinging    = (1:8)'; 
+    tdata.nBells          = length(tdata.BellsRinging);
     [isOK, mixtureA, tdata] = doclassify(fqfnAudioIn, fqfnTrainIn, tdata, kpstruct);
 	if ~isOK
 		rc = 2022; % Indicate Classification problem

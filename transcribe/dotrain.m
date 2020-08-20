@@ -86,6 +86,7 @@ function [isOK] = dotrain(fqdnTrainIn, fqfnTrainOut, towerid, towerphrase, kpstr
 	tdata.HopSizeSecs         = kpstruct.HopSizeSecs;
 	tdata.tower               = towerid;
 	tdata.towerphrase         = towerphrase;
+	tdata.trainparams         = kpstruct.trainparams;
 	
     % 6. Normalize spectra
     allbasis=allbasis./repmat(sum(allbasis,1),size(allbasis,1),1); % This line was inherited from the finnish group but may

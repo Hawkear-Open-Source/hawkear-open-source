@@ -41,7 +41,7 @@ function [isOK] = dowritelowndes (fqfnAudioIn, xxRawPieceByBi, fqfnLowndes, tdat
 	fprintf(fid,'#. TrainedOn: %s\n',               tdata.TrainedOn);
 	fprintf(fid,'#. TrainDataRecordedOn: %s\n',     tdata.TrainDataRecordedOn);
 	fprintf(fid,'#. TrainParams: %s\n',				tdata.trainparams);
-	fprintf(fid,'#. GainParams: %s\n', 				tdata.gainparams);
+	fprintf(fid,'#. ClassifyParams: %s\n', 			tdata.classifyparams);
 	fprintf(fid,'#. OnsetParams: %s\n',				tdata.onsetparams);
 	fprintf(fid,'#. WriteParams: %s\n',				tdata.writeparams);
 

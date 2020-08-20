@@ -2,12 +2,18 @@ function[isOK, pp, kpstruct, msg] = parsep(pplen,keywords, winargs)
     % Initialise kpstruct and pp
 	kpstruct={};
 	fieldns= fieldnames(keywords);
-    for i = 1:length(fieldns)
-		qq=getfield(keywords, fieldns{i});
-		if ~isfield(kpstruct,qq{2})
-			kpstruct = setfield(kpstruct,qq{2}, qq{3});
-		end
-	end
+    try
+        for i = 1:length(fieldns)
+	    	qq=getfield(keywords, fieldns{i});
+            putp('', qq{3}, qq{1});
+		    if ~isfield(kpstruct,qq{2})
+		    	kpstruct = setfield(kpstruct,qq{2}, qq{3});
+		    end
+	    end
+    catch
+        error (sprintf('problem with row %d of keyword table',i))
+    end
+    
 	pp=repmat({[]},1,pplen);
 	
 	% Process parameters
@@ -51,6 +57,28 @@ function[isOK, pp, kpstruct, msg] = parsep(pplen,keywords, winargs)
             return
         end
     end
+	
+	% Generate the group parameter strings
+	fieldns = fieldnames(keywords);
+	for i = 1:length(fieldns)
+		kw = fieldns{i}; % e.g. "qt" 
+		qq = getfield(keywords, kw); % e.g. {'num', 'quiet'    , 2      , 'train'}
+        if isempty(qq{4})
+            continue;
+        end
+		type = qq{1}; % eg "num"
+		kpname = qq{2}; % e.g. "quiet"
+		v  = getfield(kpstruct, kpname); % get the operational value of e.g. kpstruct.quiet
+		sv = putp(kw, v, type); % string version of the kpstruct field e.g. "-qt:n"
+		group  = [qq{4},'params'];    % e.g. "trainparams"
+		if isfield(kpstruct, group)
+			cv = getfield(kpstruct, group);
+			kpstruct = setfield(kpstruct, group, [cv, ' ', sv]);
+		else
+			kpstruct = setfield(kpstruct, group, sv);
+		end		
+	end
+
 	if ishelprequested
 		msg = sprintf('Help for valid keyword options: %s\n', disp(fieldns));
 		isOK=0;
@@ -88,6 +116,7 @@ function [yn] = getyn (v)
     yn = strcmpi(strtrim(v),'y');
 end
 
+
 % Convert to numeric. Only the real part is returned for a complex number. Octave:
 % The string must be in one of the following formats where a and b are real numbers and the
 % complex unit is 'i' or 'j':
@@ -105,14 +134,34 @@ function [num] = getnum (v)
 	num=real(str2double(v));
 end
 
-% Convert number to string with no trailing zeros
-function [sx] = decnotrailingzeros (x) 
-    z=sprintf('%f',x);
-    for i = length(z)-1:-1:2
-        if ~strcmp(z(i),'0');break;end
+% recreate the commandline parameter
+function [sv] = putp(kp, v, type)
+    if strcmp(type,'num')
+        sv = putnum(v);
+    elseif strcmp(type,'yn')
+        sv = putyn(v);
+    else
+        sv = putstr(v);
     end
-    if strcmp(z(i),'.')
-        i = i-1;
+    sv = sprintf('-%s:%s',kp,sv);
+endfunction
+
+%Convert num to string
+function [sv] = putnum (v)
+	sv = sprintf('%d',v);
+end
+
+% Convert yn to 'y' or 'n'
+function [sv] = putyn (v)
+    sv = 'ny'(v+1);
+end
+
+% Convert str to str
+function [sv] = putstr (v)
+    svoriginal= sv = strtrim(v);
+    sv(sv=="\n")='';
+    sv(sv=="\t")='';
+    if any(sv==' ') || ~strcmp(svoriginal,sv)
+        sv=["\"",sv,"\""];
     end
-    sx=z(1:i);
 end
