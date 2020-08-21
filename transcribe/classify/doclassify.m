@@ -1,6 +1,24 @@
 function [isOK, mixtureA, tdata] = doclassify (fqfnAudioIn, fqfnTrainIn, tdata, kpstruct) 
 	% Invokes the C++ classifier (which is confusingly called cpptranscribe (executable is transcribe.exe)
 	% as it was intended to and may eventually do the whole transcription job)
+    
+    % Update tdata from trainfile
+    td = tdata;
+    load(fqfnTrainIn); clear allbasis ccurve;  % Obtain tdata from Train file. Change cpptranscribe to avoid!!!!!!!!!!
+    tdata = mergestruct(tdata, td);
+    clear td;
+   
+    % these assignments to tdata are a bodge. doclassify should obtain these from the recording
+    % and also should allow them to be overridden on the transcribe API
+	tdata.Ringingdatetime = '20200101-0000';                    
+	tdata.Ringingname     = 'Touch 1';
+	tdata.bellset         = 's8t8'; 
+	tdata.Ringers         = 'ian,martin,paul,Leigh';
+    
+	tdata.BellsRinging    = (1:8)'; 
+	tdata.Rungon          = ''; % The friendly name of the bellset
+	tdata.Tenor           = 8;  % Why is this here! Can't remember
+    tdata.nBells          = length(tdata.BellsRinging);
 	
 	prevtime=gettime();
 	tempdir = getenv('TEMP');
@@ -43,22 +61,18 @@ function [isOK, mixtureA, tdata] = doclassify (fqfnAudioIn, fqfnTrainIn, tdata, 
     
     % 4. Clean up temp files and get results into correct variables
 	load('-mat', fqfnCppOutput); % Creates variables: TouchFile, TouchRMSdB, TouchdB, bells, duration
-    td=tdata;
-    load(fqfnTrainIn); clear allbasis ccurve;  % Obtain tdata from Train file. Change cpptranscribe to avoid!!!!!!!!!!
-    tdata= mergestruct(tdata,td);
 	delete (fqfnCppOutput);
 	delete (fqfnQqqq);
 	
-	% 5. Move info from the temporary file into appropriate variables for passing on
+	% 5. Move info from cpptranscribe into appropriate variables for passing on
     fTouch = dir(fqfnAudioIn);
 	tdata.TouchTime        = fTouch.datenum;
 	tdata.TouchdB          = TouchdB;
-	tdata.CompressionLevel = 0;  % Why ??
+	%tdata.CompressionLevel = 0;  % Why ??
 	tdata.GainProcTime     = gettime()-prevtime;
 	tdata.duration         = duration;
 	mixtureA               = bells; % Avoid by changing cpptranscribe !!!!!!!!!!!!!!!!!!!!!!!!
 	clear bells;
-	
 	isOK = 1;
 end
 
@@ -67,12 +81,5 @@ end
         tdata.FreqHigh       = kpstruct.FreqHigh;
         tdata.FreqLow        = kpstruct.FreqLow;
         tdata.nBells         = length(tdata.BellsRinging);
-        % for debugging reasons check the other tdata fields exist
-        tdata.BellsAvailable   ;         
-        tdata.BellsRinging     ;       
-        tdata.HopSizeSecs      ;     
-        tdata.WinSizeSecs      ;     
-        tdata.bellset          ; 
-        tdata.tower            ;
 	    save('-mat', fqfnQqqq, 'tdata');
     end

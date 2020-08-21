@@ -41,9 +41,9 @@ function [isOK] = dowritelowndes (fqfnAudioIn, xxRawPieceByBi, fqfnLowndes, tdat
 	fprintf(fid,'#. TrainedOn: %s\n',               tdata.TrainedOn);
 	fprintf(fid,'#. TrainDataRecordedOn: %s\n',     tdata.TrainDataRecordedOn);
 	fprintf(fid,'#. TrainParams: %s\n',				tdata.trainparams);
-	fprintf(fid,'#. ClassifyParams: %s\n', 			tdata.classifyparams);
-	fprintf(fid,'#. OnsetParams: %s\n',				tdata.onsetparams);
-	fprintf(fid,'#. WriteParams: %s\n',				tdata.writeparams);
+	fprintf(fid,'#. ClassifyParams: %s\n', 			kpstruct.classifyparams);
+	fprintf(fid,'#. OnsetParams: %s\n',				kpstruct.onsetparams);
+	fprintf(fid,'#. WriteParams: %s\n',				kpstruct.writeparams);
 
 	% 4. Write Strike Data
 	if kpstruct.hb == 'y'    % option to suppress indication of Hand vs Back in the lowndes file which is sometimes useful

@@ -5,7 +5,7 @@ function [varargout] = train(varargin)
 	api = @dotrain;
 	
 	% 1. Positional parameters accepted by the train command:
-	%     fqdnTrainIn, fqfnTrainOut, towerid, towerphrase
+	%     fqdnTrainIn, fqfnTrainOut, Towerid, TowerPhrase
 	%    All we need here is the number.
 	pplen = 4; 
 	

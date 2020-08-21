@@ -19,10 +19,10 @@ function [varargout] = printp(varargin)
 	% 3. Define the keyword parameters accepted by the printp command. The parameters supplied
 	%    are validated default values supplied, and a cell structure containing a complete
 	%    decodes set of keyword parameters is created for passing to doprintp.m
-    keywords.year={'num', 'birthyear', 2020     };
-	keywords.month={'str', 'birthmonth', 'Jaunary'};
-	keywords.day={'num', 'birthday', '1'};
-	keywords.wasweekend={'yn',  'bornatweekend', 1     };
+    keywords.year       = {'num', 'birthyear',     2020     , ''};
+	keywords.month      = {'str', 'birthmonth',    'Jaunary', ''};
+	keywords.day        = {'num', 'birthday',      '1'      , ''};
+	keywords.wasweekend = {'yn',  'bornatweekend', 1        , ''};
 	
 	% 4. Parse positional and keyword parameters
 	[isOK, pp, kp, msg] = parsep(pplen, keywords, winargs);

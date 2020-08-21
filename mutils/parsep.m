@@ -1,23 +1,38 @@
-function[isOK, pp, kpstruct, msg] = parsep(pplen,keywords, winargs)
-    % Initialise kpstruct and pp
-	kpstruct={};
+function[isOK, pp, kpstruct, msg] = parsep(pplen, keywords, winargs)
+	% 1. Manage the quiet option. kpstruct will have the "quiet" field and the user can specify the "-qt:value" parameter
+	%    whether or not "qt" is listed in the keywords table. Meaning of "qt":
+	%      - 0 ==> Noisy. 
+	%      - 1 ==> Ringing info only. 
+	%      - 2 ==> Silent.
+	%    Here we set the default value -qt:0. This is an attempt to ensure standardisation across components.
+
+    % 2. Initialise rest of kpstruct from the keywords table
+    kpstruct = {};
 	fieldns= fieldnames(keywords);
-    try
         for i = 1:length(fieldns)
-	    	qq=getfield(keywords, fieldns{i});
-            putp('', qq{3}, qq{1});
-		    if ~isfield(kpstruct,qq{2})
+			try
+				qq=getfield(keywords, fieldns{i});
+				putp('', qq{3}, qq{1});
+			catch % Bug in keywords table
+				error ('\n   INTERNAL ERROR: Unknown problem with row %d of keyword table.',i)
+			end
+		    if ~isfield(kpstruct,qq{2}) % if field does not already exist we are OK
 		    	kpstruct = setfield(kpstruct,qq{2}, qq{3});
+			else 
+				error('\n   INTERNAL ERROR: Problem with row %d of keyword table. Cannot specify the -qt: option, or duplicate value in column 2\n', i);
 		    end
 	    end
-    catch
-        error (sprintf('problem with row %d of keyword table',i))
-    end
-    
+	keywords.qt    = {'num', 'quiet'    , NaN      , ''}; 
+	keywords.quiet = {'num', 'quiet'    , NaN      , ''}; 
+	keywords.h     = {'none', 'help'    , NaN      , ''}; 
+	keywords.help  = {'none', 'help'    , NaN      , ''}; 
+    kpstruct.quiet = 1;
+    kpstruct.help  = 0;
+
+	% 3. Initialise positional parameters, pp, to empty cell structure of correct size.
 	pp=repmat({[]},1,pplen);
 	
-	% Process parameters
-	ishelprequested=0;
+	% 4. Complete pp and kpstruct from parameters on the API request
 	iskpstarted=false;
     for i = 1:length(winargs)
         if isempty(winargs{i})
@@ -37,28 +52,32 @@ function[isOK, pp, kpstruct, msg] = parsep(pplen,keywords, winargs)
 		end
 		[k,v]= splitkp(winargs{i});
 		if isfield(keywords, lower(k))
-		    qq=getfield(keywords,lower(k));
+		    qq = getfield(keywords,lower(k));
 			if     strcmp(qq{1}, 'num')
                 kpstruct = setfield(kpstruct, qq{2}, getnum(v));
             elseif strcmp(qq{1},'yn')
 			    kpstruct = setfield(kpstruct, qq{2}, getyn(v));
             elseif strcmp(qq{1},'str')	    	 	
                 kpstruct = setfield(kpstruct, qq{2}, v);
+            elseif strcmp(qq{1},'none')	    	 	
+                kpstruct = setfield(kpstruct, qq{2}, 1);
 		    else
-			    msg = sprintf('ERROR. Invalid keyword table entry "%s".\n\n', disp(qq));
-				isOK=0;
-				return
+			    error('INTERNAL ERROR. Invalid keyword table entry "%s".\n\n', disp(qq));
 			end
-		elseif any(strcmp({lower(k)}, {'help','h'}))
-			ishelprequested=1;
 		else
 			msg = sprintf('ERROR. Invalid keyword parameter: "%s"', winargs{i});
 			isOK=0;
             return
         end
     end
-	
-	% Generate the group parameter strings
+    
+    if kpstruct.help
+		error('Help for valid keyword options: %s\n', disp(fieldns));
+    end
+	rmfield(kpstruct,'help');
+    
+	% 5. Add the group parameter strings. These become metadata included in the component's output data and presented in the
+	%    technical information of an eventual analysis, for example "trainparams" for the parameters used to create the train file
 	fieldns = fieldnames(keywords);
 	for i = 1:length(fieldns)
 		kw = fieldns{i}; % e.g. "qt" 
@@ -79,11 +98,6 @@ function[isOK, pp, kpstruct, msg] = parsep(pplen,keywords, winargs)
 		end		
 	end
 
-	if ishelprequested
-		msg = sprintf('Help for valid keyword options: %s\n', disp(fieldns));
-		isOK=0;
-		return
-    end
 	if length(pp) > pplen
 		msg = sprintf('ERROR. unwanted positional parameters');
         pp = pp(1:pplen);
@@ -94,9 +108,7 @@ function[isOK, pp, kpstruct, msg] = parsep(pplen,keywords, winargs)
     isOK=1;
 end	
 
-
-% Split a '-keyword:value' parameter into keyword and value
-function [k,v] = splitkp (p)
+function [k,v] = splitkp (p) % Split a '-keyword:value' parameter into keyword and value
     i=find(p==':');
     if length(i)
         v=strtrim(p(i(1)+1:end));
@@ -111,57 +123,41 @@ function [k,v] = splitkp (p)
     k=lower(k);
 end
 
-% Convert to boolean. value = 'y' of 'Y' results in true. anything else results in false
-function [yn] = getyn (v)
+function [yn] = getyn (v) % Convert string to boolean
+	% Value = 'y' or 'Y' results in true. anything else results in false
     yn = strcmpi(strtrim(v),'y');
 end
 
-
-% Convert to numeric. Only the real part is returned for a complex number. Octave:
-% The string must be in one of the following formats where a and b are real numbers and the
-% complex unit is 'i' or 'j':
-% 
-% a + bi
-% a + b*i
-% a + i*b
-% bi + a
-% b*i + a
-% i*b + a
-% If present, a and/or b are of the form [+-]d[,.]d[[eE][+-]d] where the brackets indicate 
-% optional arguments and 'd' indicates zero or more digits. The special input values Inf, 
-% NaN, and NA are also accepted.
-function [num] = getnum (v)
+function [num] = getnum (v) % Convert string to numeric. 
+	% String must be in one of the following formats where
+    % a and b are real numbers and the complex unit is 'i' or 'j':
+    %    a + bi
+    %    a + b*i
+    %    a + i*b
+    %    bi + a
+    %    b*i + a
+    %    i*b + a
+    % If present, a and/or b are of the form [+-]d[,.]d[[eE][+-]d] where the brackets indicate 
+    % optional arguments and 'd' indicates zero or more digits. The special input values Inf, 
+    % NaN, and NA are also accepted.
 	num=real(str2double(v));
+	if isnan(num)|| isna(num); % Silently treat NaN and NA as zero
+    	num=0;
+	end
 end
 
-% recreate the commandline parameter
-function [sv] = putp(kp, v, type)
+function [sv] = putp(kp, v, type) % Recreate the commandline parameter
     if strcmp(type,'num')
-        sv = putnum(v);
+        sv = sprintf('%d',v);
     elseif strcmp(type,'yn')
-        sv = putyn(v);
-    else
-        sv = putstr(v);
+        sv = 'ny'(v+1);
+    else % "str". put value in quotes if there is anything weird in the parameter
+        svoriginal = sv = strtrim(v);
+        sv(sv=="\n")='';
+        sv(sv=="\t")='';
+        if any(sv==' ') || ~strcmp(svoriginal,sv)
+            sv=["\"",sv,"\""];
+        end
     end
     sv = sprintf('-%s:%s',kp,sv);
-endfunction
-
-%Convert num to string
-function [sv] = putnum (v)
-	sv = sprintf('%d',v);
-end
-
-% Convert yn to 'y' or 'n'
-function [sv] = putyn (v)
-    sv = 'ny'(v+1);
-end
-
-% Convert str to str
-function [sv] = putstr (v)
-    svoriginal= sv = strtrim(v);
-    sv(sv=="\n")='';
-    sv(sv=="\t")='';
-    if any(sv==' ') || ~strcmp(svoriginal,sv)
-        sv=["\"",sv,"\""];
-    end
 end

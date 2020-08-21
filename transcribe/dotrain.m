@@ -1,5 +1,7 @@
-function [isOK] = dotrain(fqdnTrainIn, fqfnTrainOut, towerid, towerphrase, kpstruct)
-    display 'in dotrain'
+function [isOK] = dotrain(fqdnTrainIn, fqfnTrainOut, Towerid, TowerPhrase, kpstruct)
+    if kpstruct.quiet == 0 % 0 ==> Noisy. 1 ==> Ringing info only. 2 ==> Silent.
+		display 'In dotrain'
+	end
 	addpath ('transcribe/train')
 	addpath ('transcribe/misc')
 	prevtime = gettime();
@@ -84,8 +86,8 @@ function [isOK] = dotrain(fqdnTrainIn, fqfnTrainOut, towerid, towerphrase, kpstr
 	%tdata.nBellsInTower       = min(12, length(tdata.BellsAvailable)); % used to ensure extra bells are not counted for diatonic sets
 	tdata.WinSizeSecs         = kpstruct.WinSizeSecs;
 	tdata.HopSizeSecs         = kpstruct.HopSizeSecs;
-	tdata.tower               = towerid;
-	tdata.towerphrase         = towerphrase;
+	tdata.Towerid             = Towerid;
+	tdata.TowerPhrase         = TowerPhrase;
 	tdata.trainparams         = kpstruct.trainparams;
 	
     % 6. Normalize spectra
