@@ -5,7 +5,6 @@ function [isOK] = dotrain(fqdnTrainIn, fqfnTrainOut, Towerid, TowerPhrase, kpstr
 	addpath ('transcribe/train')
 	addpath ('transcribe/misc')
 	prevtime = gettime();
-    
     setenv('OPENBLAS_NUM_THREADS','1'); 
 	tempdir = getenv('TEMP');
 	
@@ -74,27 +73,12 @@ function [isOK] = dotrain(fqdnTrainIn, fqfnTrainOut, Towerid, TowerPhrase, kpstr
 		tdata.TraindB(BellsToDo) = tpdata.TraindB(BellsToDo);
     end
 	
-	% 6. Complete tdata with all the fields transcribe is expecting
-	for i = 1:length(bellfns)
-        f=dir(bellfns{i});
-        timestamp(i) = f.statinfo.mtime;
-	end
-	tdata.TrainDataRecordedOn = strftime('%Y%m%d-%H%M',localtime(min(timestamp)));
-    tdata.TraindB             = round(tdata.TraindB*100)/100;
-	tdata.TrainedOn           = epoch2hkdatetime(gettime());
-    tdata.BellsAvailable      = sum(allbasis)~=0; % boolean vector
-	%tdata.nBellsInTower       = min(12, length(tdata.BellsAvailable)); % used to ensure extra bells are not counted for diatonic sets
-	tdata.WinSizeSecs         = kpstruct.WinSizeSecs;
-	tdata.HopSizeSecs         = kpstruct.HopSizeSecs;
-	tdata.Towerid             = Towerid;
-	tdata.TowerPhrase         = TowerPhrase;
-	tdata.trainparams         = kpstruct.trainparams;
-	
     % 6. Normalize spectra
-    allbasis=allbasis./repmat(sum(allbasis,1),size(allbasis,1),1); % This line was inherited from the finnish group but may
-															       % not be necessary as makes zero difference to output.
+    allbasis=allbasis./repmat(sum(allbasis,1),size(allbasis,1),1); % This line was inherited from the Finnish
+	                                                               % group but may not be necessary as makes
+															       % no difference to output.
 	
-    % 7. Stuff that should be moved into classify
+    % 7. Stuff that should be moved into classify as no need to lock the emphasis into the trainfile
     hv = sum(allbasis,2).^.5;                      % representation of the overall frequency content of the bells. Added the .^.5
 												   % on 23 July 2018. This seemed to significantly improve transcriptions
 												   % based on lincoln 6brum, sheffield team3, and gsmcambridge contest pieces
@@ -110,8 +94,23 @@ function [isOK] = dotrain(fqdnTrainIn, fqfnTrainOut, Towerid, TowerPhrase, kpstr
                                                    % train data and mixture data by prior to classification
     allbasis=scramble(allbasis,'y',ccurve(1));     % Scramble code that should be removed
 	
-    % 8. Save data needed by next phase
+	% 8. Complete tdata with all the fields transcribe is expecting
+	for i = 1:length(bellfns)
+        f=dir(bellfns{i});
+        timestamp(i) = f.statinfo.mtime;
+	end
+	tdata.TrainDataRecordedOn = strftime('%Y%m%d-%H%M',localtime(min(timestamp)));
+    tdata.TraindB             = round(tdata.TraindB*100)/100;
+	tdata.TrainedOn           = epoch2hkdatetime(gettime());
+    tdata.BellsAvailable      = sum(allbasis)~=0; % boolean vector
+	tdata.WinSizeSecs         = kpstruct.WinSizeSecs;
+	tdata.HopSizeSecs         = kpstruct.HopSizeSecs;
+	tdata.Towerid             = kpstruct.Towerid;
+	tdata.TowerPhrase         = kpstruct.TowerPhrase;
+	tdata.DefaultBells        = kpstruct.DefaultBells;
+	tdata.trainparams         = kpstruct.trainparams;
 	tdata.TrainProcTime = sprintf('%.3fsecs',gettime()-prevtime);
+    % 9. Save the binary trainfile
     save ('-mat', fqfnTrainOut, 'allbasis', 'tdata', 'ccurve');
     clear time; 
     fprintf ('       Total time for train processing: %s\n\n\n', tdata.TrainProcTime);

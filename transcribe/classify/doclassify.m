@@ -1,6 +1,5 @@
 function [isOK, mixtureA, tdata] = doclassify (fqfnAudioIn, fqfnTrainIn, tdata, kpstruct) 
-	% Invokes the C++ classifier (which is confusingly called cpptranscribe (executable is transcribe.exe)
-	% as it was intended to and may eventually do the whole transcription job)
+	% Invokes the C++ classifier (which is confusingly called cpptranscribe and executable is called transcribe.exe!
     
     % Update tdata from trainfile
     td = tdata;
@@ -8,7 +7,7 @@ function [isOK, mixtureA, tdata] = doclassify (fqfnAudioIn, fqfnTrainIn, tdata, 
     tdata = mergestruct(tdata, td);
     clear td;
    
-    % these assignments to tdata are a bodge. doclassify should obtain these from the recording
+    % these assignments to tdata are a bodge.  should obtain these from the recording
     % and also should allow them to be overridden on the transcribe API
 	tdata.Ringingdatetime = '20200101-0000';                    
 	tdata.Ringingname     = 'Touch 1';
@@ -44,12 +43,13 @@ function [isOK, mixtureA, tdata] = doclassify (fqfnAudioIn, fqfnTrainIn, tdata, 
 		      overlaps='overlaps'; %bypass a mobfuscation limitation
               cmd = strrep(cmd,'\\','\',overlaps,false); % Remove double \ which created problems for \\servername\...
     else    
-        cmd = sprintf('\"%s\" -audio:\"%s\" -train:\"%s\" -tdata:\"%s\" -out:\"%s\" -quiet:2 t', ...
+        cmd = sprintf('\"%s\" -audio:\"%s\" -train:\"%s\" -tdata:\"%s\" -out:\"%s\" -quiet:\"%d\" t', ...
 	          cpptranscribeBinary, ...
 	          strtrim(fqfnAudioIn), ...
 	          strtrim(fqfnTrainIn), ...
 	          strtrim(fqfnKpstruct),...
-	          strtrim(fqfnCppOutput));
+	          strtrim(fqfnCppOutput),...
+			  kpstruct.quiet);
     end
 	system(cmd);
 	if ~exist(fqfnCppOutput,'file')
@@ -58,9 +58,9 @@ function [isOK, mixtureA, tdata] = doclassify (fqfnAudioIn, fqfnTrainIn, tdata, 
 	    isOK = 0;
 	    return;
 	end
-    
-    % 4. Clean up temp files and get results into correct variables
 	load('-mat', fqfnCppOutput); % Creates variables: TouchFile, TouchRMSdB, TouchdB, bells, duration
+    
+    % 4. Clean up temp files
 	delete (fqfnCppOutput);
 	delete (fqfnQqqq);
 	
@@ -68,7 +68,6 @@ function [isOK, mixtureA, tdata] = doclassify (fqfnAudioIn, fqfnTrainIn, tdata, 
     fTouch = dir(fqfnAudioIn);
 	tdata.TouchTime        = fTouch.datenum;
 	tdata.TouchdB          = TouchdB;
-	%tdata.CompressionLevel = 0;  % Why ??
 	tdata.GainProcTime     = gettime()-prevtime;
 	tdata.duration         = duration;
 	mixtureA               = bells; % Avoid by changing cpptranscribe !!!!!!!!!!!!!!!!!!!!!!!!
